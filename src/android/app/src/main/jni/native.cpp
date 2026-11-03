@@ -1743,17 +1743,7 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignOut(JNIEnv* env, jclass c
 }
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignIn(JNIEnv* env, jclass clazz) {
-    // DEN_ORANGE_ONLY: the sign-in goes through the Orange app only; DEN no longer opens its own.
-    {
-        const jmethodID result_method = env->GetStaticMethodID(
-            clazz, "onNextendoSignInResult", "(ZLjava/lang/String;)V");
-        const jstring jmsg = Common::Android::ToJString(
-            env, "Utilise l'app Orange (Discord de DEN) pour obtenir nextendo_account.txt, puis copie-le dans files/config. / Use the Orange app (DEN Discord) to get nextendo_account.txt, then copy it into files/config.");
-        env->CallStaticVoidMethod(clazz, result_method, static_cast<jboolean>(false), jmsg);
-        env->DeleteLocalRef(jmsg);
-        return;
-    }
-#if 0 // DEN_ORANGE_ONLY: ancienne connexion par navigateur
+    // DEN_SIGNIN: connexion Nextendo par le navigateur
     std::thread([] {
         JNIEnv* thread_env = Common::Android::GetEnvForThread();
         const jclass cls = Common::Android::GetNativeLibraryClass();
@@ -1777,7 +1767,6 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoSignIn(JNIEnv* env, jclass cl
                                          jmsg);
         thread_env->DeleteLocalRef(jmsg);
     }).detach();
-#endif
 }
 
 jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_nextendoOnlineCountsJson(JNIEnv* env, jclass clazz) {
