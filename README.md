@@ -82,6 +82,9 @@ Jeux testés et qui fonctionnent en ligne :
 - ✅ Pokémon Écarlate / Violet (4.0.0) : coop et échange testés. Tout le jeu en ligne fonctionne d'après Nextendo, sauf les compétitions et les combats multi <!-- DEN_SV_README -->
 - ✅ Pokkén Tournament DX
 - ✅ Super Smash Bros. Ultimate
+- ✅ Dragon Ball FighterZ
+
+**Appareil minimum pour jouer en ligne :** DEN est fait pour jouer en ligne, et un appareil trop lent peut gâcher une salle pour tous les autres (FPS bas, désynchronisations). Joue en ligne uniquement avec un appareil au moins aussi puissant qu'une **Retroid Pocket 5** (Snapdragon 865) ou mieux, sous **Android 13** ou plus récent. Les appareils plus faibles ne sont pas pris en charge pour le jeu en ligne.
 
 Les autres jeux compatibles avec Nextendo devraient fonctionner aussi par défaut : **je vous invite à les tester** et à me faire un retour (idéalement avec le `eden_log.txt.old`) en cas de message d'erreur.
 
@@ -197,6 +200,9 @@ Games tested and working online:
 - ✅ Pokémon Scarlet / Violet (4.0.0): co-op and trading tested. All online play works according to Nextendo, except competitions and multi battles
 - ✅ Pokkén Tournament DX
 - ✅ Super Smash Bros. Ultimate
+- ✅ Dragon Ball FighterZ
+
+**Minimum device for online play:** DEN is meant to be played online, and a slow device can ruin a room for everyone else (low FPS, desyncs). Please only play online with a device at least as powerful as a **Retroid Pocket 5** (Snapdragon 865) or better, running **Android 13** or newer. Weaker devices are not supported for online play.
 
 The other games compatible with Nextendo should work too by default: **please try them** and send me feedback (ideally with `eden_log.txt.old`) if you get an error message.
 
