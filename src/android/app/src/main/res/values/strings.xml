@@ -501,7 +501,7 @@
     <string name="stoat_link" translatable="false">https://stt.gg/qKgFEAbH</string>
     <string name="x_link" translatable="false">https://nitter.poast.org/edenemuofficial</string>
     <string name="website_link" translatable="false">https://eden-emu.dev</string>
-    <string name="github_link" translatable="false">https://github.com/Dmr77680/DEN/releases</string>
+    <string name="github_link" translatable="false">https://github.com/Dmr77680/den-releases/releases</string>
 
     <!-- General settings strings -->
     <string name="frame_limit_enable">Limit speed</string>
@@ -1953,7 +1953,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <string name="nextendo_remove_confirm">Remove this friend?</string>
     <string name="nextendo_friend_removed">Friend removed</string>
     <string name="nextendo_signin_required_title">Not signed in to Nextendo</string>
-    <string name="nextendo_signin_required_message">This game plays online through Nextendo, and you have no account file. Without it, the game will show error 2306-0802. Get your nextendo_account.txt with the Orange app (on the DEN Discord), copy it into files/config, then launch the game again.</string>
+    <string name="nextendo_signin_required_message">This game plays online through Nextendo, and you are not signed in. Without signing in, the game will show error 2306-0802. Tap Sign in to Nextendo, sign in in your browser, then launch the game again.</string>
     <string name="nextendo_launch_anyway">Launch anyway</string>
     <string name="den_rng_seed_enable">Custom RNG seed</string>
     <string name="den_rng_seed_description">Uses a fixed seed for the random number generator. Required by some Smash Bros. Ultimate online mods (set the seed to 0).</string>

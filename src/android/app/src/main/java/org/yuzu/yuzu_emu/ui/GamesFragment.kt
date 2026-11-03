@@ -80,7 +80,7 @@ class GamesFragment : Fragment() {
     private fun fetchNextendoVersions(): Map<String, String>? {
         try {
             val conn = java.net.URL(
-                "https://raw.githubusercontent.com/Dmr77680/DEN/main/docs/nextendo_versions.json"
+                "https://raw.githubusercontent.com/Dmr77680/den-releases/main/nextendo_versions.json"
             ).openConnection() as java.net.HttpURLConnection
             conn.connectTimeout = 5000
             conn.readTimeout = 5000
@@ -417,7 +417,7 @@ class GamesFragment : Fragment() {
                         getString(org.yuzu.yuzu_emu.R.string.nextendo_friends),
                         getString(org.yuzu.yuzu_emu.R.string.nextendo_country), // DEN_COUNTRY
                         org.yuzu.yuzu_emu.NativeLibrary.nextendoAccountName().let {
-                            if (it.isEmpty()) getString(org.yuzu.yuzu_emu.R.string.nextendo_get_account) else getString(org.yuzu.yuzu_emu.R.string.nextendo_sign_out, it)
+                            if (it.isEmpty()) getString(org.yuzu.yuzu_emu.R.string.nextendo_sign_in) else getString(org.yuzu.yuzu_emu.R.string.nextendo_sign_out, it)
                         }
                     )
                 ) { _, which ->
@@ -426,7 +426,7 @@ class GamesFragment : Fragment() {
                     } else if (which == 1) {
                         NextendoCountry.show(requireContext())
                     } else if (org.yuzu.yuzu_emu.NativeLibrary.nextendoAccountName().isEmpty()) {
-                        try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://discord.gg/YjdS6wrbUj"))) } catch (_: Exception) { } // DEN_ORANGE_UI
+                        org.yuzu.yuzu_emu.utils.NextendoSignInService.start(requireContext())
                     } else {
                         org.yuzu.yuzu_emu.NativeLibrary.nextendoSignOut()
                         Toast.makeText(requireContext(), getString(org.yuzu.yuzu_emu.R.string.nextendo_signed_out), Toast.LENGTH_SHORT).show()

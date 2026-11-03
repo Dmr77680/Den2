@@ -8,17 +8,17 @@ DEN est un fork de l'émulateur Switch **[Eden](https://git.eden-emu.dev/eden-em
 
 <!-- DEN_PRIVATE -->
 > [!IMPORTANT]
-> ### 🔒 DEN est un projet privé
+> ### 💬 Support : uniquement sur le Discord de DEN
 >
-> DEN est **mon build personnel**, partagé uniquement avec la communauté de mon **[Discord de DEN](https://discord.gg/YjdS6wrbUj)**. Ce n'est pas un build officiel de Nextendo et il n'est pas soutenu par l'équipe de Nextendo.
+> DEN est un projet **personnel et indépendant**. Il n'est ni soutenu ni pris en charge par l'équipe de Nextendo, ni par celle d'Eden.
 >
-> **Tout se passe sur le Discord de DEN** : aide, questions, bugs, nouveautés. **Merci de ne parler de DEN sur aucun serveur de Nextendo** (Discord, forum ou autre) et de ne pas leur demander de l'aide pour DEN : ils n'en sont pas responsables.
+> **Toute l'aide, les questions, les bugs et les correctifs se passent uniquement sur le [Discord de DEN](https://discord.gg/YjdS6wrbUj)**, et nulle part ailleurs. **Merci de ne pas demander d'aide pour DEN aux équipes de Nextendo ou d'Eden** (Discord, forum, dépôt ou autre) : elles ne sont pas responsables de DEN.
 
 > [!IMPORTANT]
 > ### 🚨 Tu as l'erreur **2306-0802** (« Unable to connect to the server ») ? Vérifie ces 6 points, dans l'ordre :
 >
 > 1. **Tu utilises la dernière version de DEN** : télécharge `DEN.apk` dans l'onglet [Releases](../../releases). Les anciens APK peuvent ne plus marcher en ligne.
-> 2. **Ton fichier de compte est en place** : récupère `nextendo_account.txt` avec l'app **Orange** (sur le [Discord de DEN](https://discord.gg/YjdS6wrbUj)) et copie-le dans le dossier `files/config/` de DEN. S'il a expiré, refais-en un avec Orange. Être connecté sur le site ne suffit pas.
+> 2. **Tu es connecté à Nextendo dans DEN** : ouvre le menu de la liste des jeux et appuie sur **« Se connecter à Nextendo »**. Si ta session a expiré, reconnecte-toi. Être connecté sur le site ne suffit pas.
 > 3. **Une seule session ouverte** : ferme le jeu **et** DEN sur tous tes autres appareils (autre téléphone, console, PC, autre émulateur). Un compte ne peut être en ligne qu'à un seul endroit.
 > 4. **Compte lié au Discord Nextendo** (c'est la raison la plus fréquente du refus) : le jeu en ligne est réservé aux comptes liés à un compte Discord membre du [serveur Nextendo](https://discord.gg/nextendonetwork). Rejoins-le, appuie sur **« Vérifier mon compte »** dans le salon de vérification, puis connecte-toi sur verify.nextendo.network avec ton e-mail et ton mot de passe Nextendo ([guide](https://wiki.nextendo.network/guide/discord-link)). Quitter le serveur Discord supprime la liaison. Vérifie aussi que ton e-mail est confirmé sur [nextendo.network](https://nextendo.network).
 > 5. **Après un plantage** : ferme DEN complètement, attends 2 à 3 minutes, puis relance.
@@ -49,20 +49,19 @@ Pour partager, poser tes questions, signaler un bug ou suivre les nouvelles vers
 Pour jouer en ligne avec DEN, il te faut un **compte Nextendo gratuit**, à créer sur **[nextendo.network](https://nextendo.network)**. Sans compte, DEN fonctionne comme un émulateur Switch classique, mais ni le jeu en ligne ni la liste d'amis ne sont disponibles.
 
 1. Crée ton compte sur [nextendo.network](https://nextendo.network) et **confirme ton adresse e-mail**.
-2. Récupère ton fichier `nextendo_account.txt` avec l'app **Orange**, disponible sur le [Discord de DEN](https://discord.gg/YjdS6wrbUj) : tu te connectes à Nextendo dans ton navigateur (Orange ne voit jamais ton mot de passe), puis tu enregistres le fichier. Copie-le ensuite dans le dossier `files/config/` de DEN.
-3. Fais cela **avant** de lancer un jeu : sans fichier de compte, le jeu affiche l'erreur **2306-0802**. Si ta session expire, le fichier est à refaire avec Orange.
+2. Dans DEN, ouvre le menu de la liste des jeux et appuie sur **« Se connecter à Nextendo »** : tu te connectes dans ton navigateur (DEN ne voit jamais ton mot de passe), puis tu reviens dans l'appli.
+3. Fais cela **avant** de lancer un jeu : sans connexion, le jeu affiche l'erreur **2306-0802**. Si ta session expire, reconnecte-toi.
 4. Tu ne peux être en ligne que sur **un seul appareil à la fois** avec le même compte.
 
 <!-- DEN_ACCOUNT_REQ -->
-<!-- DEN_ORANGE_ONLY -->
 
 ## ✅ Ce qui fonctionne
 
-- **Jeu en ligne sur Nextendo avec un fichier de compte généré par l'app Orange.** Voir « Jeux testés » ci-dessous.
-- **Compte via l'app Orange** : le fichier `nextendo_account.txt` te connecte à Nextendo (identité, amis, présence) et DEN renouvelle ta session automatiquement tant que le fichier est valide.
+- **Jeu en ligne sur Nextendo.** Voir « Jeux testés » ci-dessous.
+- **Connexion à Nextendo en un clic** : tu te connectes depuis DEN (identité, amis, présence) et DEN renouvelle ta session automatiquement.
 - **Amis Nextendo** : ta liste d'amis est visible dans les jeux et dans l'écran « Amis Nextendo » (bouton dans l'en-tête de la liste des jeux), qui montre qui est en ligne et à quel jeu il joue. Tu peux aussi **ajouter un ami avec son code ami** (format `SW-1234-5678-9012`), **accepter ou refuser les demandes reçues** et **supprimer un ami** (appui long sur son nom). L'envoi de demandes d'ami a été testé et fonctionne.
 - **Drapeau du pays dans Mario Kart 8 Deluxe** (menu « Drapeau du pays ») : ton drapeau s'affiche en ligne, avec le nom du pays. Pour la version 4.0.0 du jeu ; relance le jeu après avoir changé de drapeau.
-- **Alerte si tu n'es pas connecté** quand tu lances un jeu Nextendo, qui te rappelle d'utiliser l'app Orange.
+- **Alerte si tu n'es pas connecté** quand tu lances un jeu Nextendo, qui te propose de te connecter.
 - **Compteur de joueurs en ligne** affiché en vert sur chaque jeu compatible.
 - **Badge orange « MAJ x.y.z »** quand ta version du jeu n'est pas celle que Nextendo exige.
 - **Import de Mii** (menu de la liste des jeux) : fichiers `.charinfo` / `.mii` et `MiiDatabase.dat` de Ryujinx.
@@ -130,17 +129,17 @@ DEN is a fork of the **[Eden](https://git.eden-emu.dev/eden-emu/eden)** Switch e
 > Personal, unofficial project. Not affiliated with the Eden team, Citron, Nextendo or Nintendo.
 
 > [!IMPORTANT]
-> ### 🔒 DEN is a private project
+> ### 💬 Support: only on the DEN Discord
 >
-> DEN is **my personal build**, shared only with the community of my **[DEN Discord](https://discord.gg/YjdS6wrbUj)**. It is not an official Nextendo build and it is not supported by the Nextendo team.
+> DEN is a **personal, independent** project. It is neither supported nor maintained by the Nextendo team or the Eden team.
 >
-> **Everything happens on the DEN Discord**: help, questions, bugs, news. **Please do not talk about DEN on any Nextendo server** (Discord, forum or anywhere else) and do not ask them for help with DEN: they are not responsible for it.
+> **All help, questions, bugs and fixes happen only on the [DEN Discord](https://discord.gg/YjdS6wrbUj)**, and nowhere else. **Please do not ask the Nextendo or Eden teams for help with DEN** (Discord, forum, repository or anywhere else): they are not responsible for it.
 
 > [!IMPORTANT]
 > ### 🚨 Getting error **2306-0802** ("Unable to connect to the server")? Check these 6 things, in order:
 >
 > 1. **You use the latest DEN version**: download `DEN.apk` from the [Releases](../../releases) tab. Older APKs may no longer play online.
-> 2. **Your account file is in place**: get `nextendo_account.txt` with the **Orange** app (on the [DEN Discord](https://discord.gg/YjdS6wrbUj)) and copy it into DEN's `files/config/` folder. If it has expired, make a new one with Orange. Being signed in on the website is not enough.
+> 2. **You are signed in to Nextendo in DEN**: open the games list menu and tap **"Sign in to Nextendo"**. If your session has expired, sign in again. Being signed in on the website is not enough.
 > 3. **Only one open session**: close the game **and** DEN on all your other devices (another phone, console, PC, another emulator). An account can only be online in one place.
 > 4. **Account linked to the Nextendo Discord** (the most common reason for the refusal): online play is reserved for accounts linked to a Discord account that is a member of the [Nextendo server](https://discord.gg/nextendonetwork). Join it, press **"Verify my account"** in the verification channel, then sign in on verify.nextendo.network with your Nextendo e-mail and password ([guide](https://wiki.nextendo.network/guide/discord-link)). Leaving the Discord server removes the link. Also check that your e-mail is confirmed on [nextendo.network](https://nextendo.network).
 > 5. **After a crash**: fully close DEN, wait 2 to 3 minutes, then relaunch.
@@ -171,17 +170,17 @@ To share, ask questions, report a bug or follow new DEN versions, join the **[DE
 To play online with DEN you need a **free Nextendo account**, created at **[nextendo.network](https://nextendo.network)**. Without an account DEN works as a regular Switch emulator, but online play and the friends list are not available.
 
 1. Create your account at [nextendo.network](https://nextendo.network) and **confirm your e-mail address**.
-2. Get your `nextendo_account.txt` with the **Orange** app, available on the [DEN Discord](https://discord.gg/YjdS6wrbUj): you sign in to Nextendo in your browser (Orange never sees your password), then save the file. Copy it into DEN's `files/config/` folder.
-3. Do this **before** launching a game: without an account file the game shows error **2306-0802**. If your session expires, make a new file with Orange.
+2. In DEN, open the games list menu and tap **"Sign in to Nextendo"**: you sign in in your browser (DEN never sees your password), then come back to the app.
+3. Do this **before** launching a game: without signing in the game shows error **2306-0802**. If your session expires, sign in again.
 4. You can only be online on **one device at a time** with the same account.
 
 ## ✅ What works
 
-- **Online play on Nextendo with an account file made by the Orange app.** See "Tested games" below.
-- **Account through the Orange app**: the `nextendo_account.txt` file signs you in to Nextendo (identity, friends, presence) and DEN renews your session automatically as long as the file is valid.
+- **Online play on Nextendo.** See "Tested games" below.
+- **One-tap Nextendo sign-in**: you sign in from DEN (identity, friends, presence) and DEN renews your session automatically.
 - **Nextendo friends**: your friend list is visible in games and on the "Nextendo Friends" screen (button in the games list header), which shows who is online and which game they are playing. You can also **add a friend with their friend code** (format `SW-1234-5678-9012`), **accept or decline incoming requests** and **remove a friend** (long-press their name). Sending friend requests has been tested and works.
 - **Country flag in Mario Kart 8 Deluxe** ("Country flag" menu): your flag shows online, with the country name. For game version 4.0.0; restart the game after changing the flag.
-- **Warning when you are not signed in** as you launch a Nextendo game, reminding you to use the Orange app.
+- **Warning when you are not signed in** as you launch a Nextendo game, offering to sign you in.
 - **Online player counter** shown in green on each compatible game.
 - **Orange "UPDATE x.y.z" badge** when your game version is not the one Nextendo requires.
 - **Mii import** (games list menu): `.charinfo` / `.mii` files and Ryujinx `MiiDatabase.dat`.
