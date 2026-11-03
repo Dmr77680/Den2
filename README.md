@@ -89,14 +89,6 @@ Les autres jeux compatibles avec Nextendo devraient fonctionner aussi par défau
 
 > 💡 **Pense à laisser les shaders se compiler** avant de jouer en ligne (lance le jeu et laisse-le charger ses shaders) : sinon les saccades peuvent provoquer des déconnexions en pleine partie.
 
-## ⚠️ Ce qui ne fonctionne pas (encore)
-
-- **Erreur 2306-0802 / « Unable to connect to the server »** : le plus souvent, ton fichier `nextendo_account.txt` est absent ou expiré (voir plus haut). Sinon, vérifie que ton adresse e-mail est confirmée sur nextendo.network, que ton compte est [lié à Discord](https://wiki.nextendo.network/guide/discord-link), qu'il est actif et que tu n'es pas déjà en ligne sur un autre appareil.
-- **Pokémon Légendes : Z-A** (2.0.2) : le mode en ligne marche, mais rejoindre la room d'un ami peut être long ou échouer si l'un de vous a un réseau restrictif (Wi-Fi d'entreprise, données mobiles) ou est très loin. Réessaie en Wi-Fi, l'hôte restant sur l'écran de la room.
-- **Pokémon Écarlate / Violet** : les compétitions et les combats multi ne sont pas pris en charge par Nextendo.
-- **Splatoon 3** : le jeu se lance mais a des problèmes graphiques (limite connue).
-- **Stabilité** : testé surtout sur **Retroid Pocket 5**. Un appareil en surcadençage ou qui chauffe peut avoir des chutes de FPS et des déconnexions. Les émulateurs Android sur PC (BlueStacks, etc.) ne sont pas recommandés : préfère un vrai appareil arm64.
-
 ## Installation
 
 **Configuration requise : Android 13 minimum, appareil 64 bits (arm64).** Testé sur Retroid Pocket 5.
@@ -206,14 +198,6 @@ Games tested and working online:
 The other games compatible with Nextendo should work too by default: **please try them** and send me feedback (ideally with `eden_log.txt.old`) if you get an error message.
 
 > 💡 **Make sure your shaders are compiled** before playing online (launch the game and let it finish loading its shaders): otherwise stutters can cause disconnections mid-match.
-
-## ⚠️ What doesn't work (yet)
-
-- **Error 2306-0802 / "Unable to connect to the server"**: most often your `nextendo_account.txt` file is missing or expired (see above). Otherwise check that your e-mail is confirmed on nextendo.network, that your account is [linked to Discord](https://wiki.nextendo.network/guide/discord-link), that it is active and that you are not already online on another device.
-- **Pokémon Legends: Z-A** (2.0.2): online mode works, but joining a friend's room can be slow or fail if one of you is on a restrictive network (company Wi-Fi, mobile data) or very far away. Retry on Wi-Fi, with the host staying on the room screen.
-- **Pokémon Scarlet / Violet**: competitions and multi battles are not supported by Nextendo.
-- **Splatoon 3**: the game launches but has graphical issues (known limitation).
-- **Stability**: tested mainly on a **Retroid Pocket 5**. An overclocked or overheating device may see FPS drops and disconnections. Android emulators on PC (BlueStacks, etc.) are not recommended: use a real arm64 device.
 
 ## Install
 
