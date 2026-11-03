@@ -13,7 +13,7 @@ jobs:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           TAG: ${{ github.event.release.tag_name }}
           NAME: ${{ github.event.release.name }}
-          URL: ${{ github.event.release.html_url }}
+          URL: "https://github.com/Dmr77680/den-releases/releases/tag/${{ github.event.release.tag_name }}"
           BODY: ${{ github.event.release.body }}
         run: |
           TITLE="${NAME:-$TAG}"
