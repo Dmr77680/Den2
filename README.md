@@ -1,4 +1,4 @@
-# DEN — Eden + Nextendo
+# DEN — Switch emulator for Android with Nextendo online play
 
 **🇫🇷 Français** · [🇬🇧 English below](#-english)
 
