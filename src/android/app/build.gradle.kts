@@ -64,7 +64,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.eden.eden_emulator"
+        applicationId = "dev.den" // DEN_APPID
         minSdk = 24
         targetSdk = 36
         versionName = getGitVersion()
@@ -161,11 +161,9 @@ android {
                 "proguard-rules.pro"
             )
 
-            // DEN_APPNAME: nom affiche "DEN" (le suffixe du paquet reste, pour garder les donnees)
+            // DEN_APPNAME: nom affiche "DEN" ; identifiant propre dev.den (plus de suffixe)
             manifestPlaceholders += mapOf("appNameSuffix" to "")
 
-            versionNameSuffix = "-relWithDebInfo"
-            applicationIdSuffix = ".relWithDebInfo"
             isJniDebuggable = true
         }
 
