@@ -26,7 +26,7 @@ The chat between friends runs on a server operated by the DEN developer, hosted 
 * the messages you send and your read receipts;
 * the blocks and reports you make.
 
-Messages are kept on the server for [N DAYS / UNTIL DELETED]. The server does not store anything else about you. You can ask for your chat data to be deleted by contacting the developer on the DEN Discord.
+Messages are stored on the server so that your friends can receive them. The server does not store anything else about you. You can ask for your chat data to be deleted by contacting the developer on the DEN Discord.
 
 ### Other connections
 
@@ -64,7 +64,7 @@ Le chat entre amis fonctionne sur un serveur géré par le développeur de DEN, 
 * les messages que tu envoies et tes accusés de lecture ;
 * les blocages et signalements que tu fais.
 
-Les messages sont conservés sur le serveur [N JOURS / JUSQU'À SUPPRESSION]. Le serveur ne stocke rien d'autre sur toi. Tu peux demander la suppression de tes données de chat en contactant le développeur sur le Discord de DEN.
+Les messages sont stockés sur le serveur pour que tes amis puissent les recevoir. Le serveur ne stocke rien d'autre sur toi. Tu peux demander la suppression de tes données de chat en contactant le développeur sur le Discord de DEN.
 
 ### Autres connexions
 
