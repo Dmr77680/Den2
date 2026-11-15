@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <span>
@@ -31,13 +32,17 @@
 
 namespace WebService::NextendoApi {
 
+// DEN_CA_RACE: written by a background thread on Android, read by network threads.
+static std::mutex g_ca_cert_mutex;
 std::string g_ca_cert_override;
 
 void SetCaCertPathOverride(const std::string& path) {
+    std::lock_guard lock{g_ca_cert_mutex};
     g_ca_cert_override = path;
 }
 
 std::string GetCaCertPathOverride() {
+    std::lock_guard lock{g_ca_cert_mutex};
     return g_ca_cert_override;
 }
 
@@ -204,10 +209,12 @@ bool IsLoopback(const std::string& host) {
 // real certs -- not the system's actual CA store. On Linux, point at the real distro-provided
 // bundle directly. On Windows/macOS there's no equivalent fixed path; leave the client's cert
 // path unset so httplib falls through to its own native cert-store loader for those platforms.
-void ApplyCaCertPath(httplib::Client& client) {
-    if (!g_ca_cert_override.empty() && std::filesystem::exists(g_ca_cert_override)) {
-        client.set_ca_cert_path(g_ca_cert_override);
-        return;
+// Returns false when no certificate bundle could be applied (yet).
+bool ApplyCaCertPath(httplib::Client& client) {
+    const std::string override_path = GetCaCertPathOverride();
+    if (!override_path.empty() && std::filesystem::exists(override_path)) {
+        client.set_ca_cert_path(override_path);
+        return true;
     }
 #ifdef __linux__
     static constexpr std::array<const char*, 4> candidates{
@@ -219,12 +226,14 @@ void ApplyCaCertPath(httplib::Client& client) {
     for (const char* path : candidates) {
         if (std::filesystem::exists(path)) {
             client.set_ca_cert_path(path);
-            return;
+            return true;
         }
     }
     LOG_ERROR(WebService, "ApplyCaCertPath: no known system CA bundle found");
+    return false;
 #else
     (void)client;
+    return true;
 #endif
 }
 
@@ -266,17 +275,33 @@ std::optional<std::string> SanitizeBaseUrl(std::string raw) {
     return raw;
 }
 
+// DEN_CA_RACE: on Android the CA bundle is exported by a background thread at startup. The client
+// used to be built once, so a first request that beat that export left it without certificates for
+// the whole session. Now it is rebuilt until a bundle could be applied, and the very first build on
+// Android waits a moment for the export. Only called with the client mutex held (see Send).
 httplib::Client& SharedClient() {
-    static httplib::Client client = [] {
-        httplib::Client c{BaseUrl()};
-        c.set_connection_timeout(TimeoutSeconds);
-        c.set_read_timeout(TimeoutSeconds);
-        c.set_follow_location(true);
-        c.set_keep_alive(true);
-        ApplyCaCertPath(c);
-        return c;
-    }();
-    return client;
+    static std::unique_ptr<httplib::Client> client;
+    static bool has_ca = false;
+    if (!client || !has_ca) {
+        auto c = std::make_unique<httplib::Client>(BaseUrl());
+        c->set_connection_timeout(TimeoutSeconds);
+        c->set_read_timeout(TimeoutSeconds);
+        c->set_follow_location(true);
+        c->set_keep_alive(true);
+#ifdef __ANDROID__
+        // The export normally takes well under a second; wait at most 2 s, once.
+        static bool waited = false;
+        if (!waited) {
+            waited = true;
+            for (int i = 0; i < 20 && GetCaCertPathOverride().empty(); ++i) {
+                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            }
+        }
+#endif
+        has_ca = ApplyCaCertPath(*c);
+        client = std::move(c);
+    }
+    return *client;
 }
 
 // DEN_REFRESH: renews the access token with the stored refresh token. Nextendo rotates the
