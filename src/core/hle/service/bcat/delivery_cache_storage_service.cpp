@@ -4,6 +4,9 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <algorithm>
+#include <cstring>
+
 #include "core/hle/service/bcat/bcat_result.h"
 #include "core/hle/service/bcat/delivery_cache_directory_service.h"
 #include "core/hle/service/bcat/delivery_cache_file_service.h"
@@ -24,6 +27,17 @@ IDeliveryCacheStorageService::IDeliveryCacheStorageService(Core::System& system_
     // clang-format on
 
     RegisterHandlers(functions);
+
+    // The directories of the delivery cache, listed by EnumerateDeliveryCacheDirectory.
+    if (root != nullptr) {
+        for (const auto& subdir : root->GetSubdirectories()) {
+            DirectoryName name{};
+            const auto subdir_name = subdir->GetName();
+            std::memcpy(name.data(), subdir_name.data(),
+                        (std::min<std::size_t>)(subdir_name.size(), name.size() - 1));
+            entries.push_back(name);
+        }
+    }
 }
 
 IDeliveryCacheStorageService::~IDeliveryCacheStorageService() = default;

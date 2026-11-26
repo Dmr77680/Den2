@@ -7,6 +7,7 @@
 #include "core/core.h"
 #include "core/hle/service/bcat/bcat_service.h"
 #include "core/hle/service/bcat/delivery_cache_storage_service.h"
+#include "core/hle/service/bcat/nextendo_bcat.h"
 #include "core/hle/service/bcat/service_creator.h"
 #include "core/hle/service/cmif_serialization.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -51,16 +52,19 @@ Result IServiceCreator::CreateDeliveryCacheStorageService(
     LOG_INFO(Service_BCAT, "called, process_id={}", process_id.pid);
 
     const auto title_id = system.ResolveCallerProgramId(*process_id);
-    *out_interface =
-        std::make_shared<IDeliveryCacheStorageService>(system, fsc.GetBCATDirectory(title_id));
+    const auto root = fsc.GetBCATDirectory(title_id);
+    // [Nextendo] Install the title's online data before the game lists its delivery cache.
+    NextendoBcat::EnsureInstalled(root, title_id);
+    *out_interface = std::make_shared<IDeliveryCacheStorageService>(system, root);
     R_SUCCEED();
 }
 
 Result IServiceCreator::CreateDeliveryCacheStorageServiceWithApplicationId(
     u64 application_id, OutInterface<IDeliveryCacheStorageService> out_interface) {
     LOG_INFO(Service_BCAT, "called, application_id={:016X}", application_id);
-    *out_interface = std::make_shared<IDeliveryCacheStorageService>(
-        system, fsc.GetBCATDirectory(application_id));
+    const auto root = fsc.GetBCATDirectory(application_id);
+    NextendoBcat::EnsureInstalled(root, application_id);
+    *out_interface = std::make_shared<IDeliveryCacheStorageService>(system, root);
     R_SUCCEED();
 }
 

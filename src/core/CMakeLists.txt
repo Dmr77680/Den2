@@ -554,6 +554,9 @@ add_library(core STATIC
     hle/service/bcat/delivery_cache_progress_service.h
     hle/service/bcat/delivery_cache_storage_service.cpp
     hle/service/bcat/delivery_cache_storage_service.h
+    hle/service/bcat/nextendo_bcat.cpp
+    hle/service/bcat/nextendo_bcat.h
+    hle/service/bcat/nextendo_zip.h
     hle/service/bcat/news/newly_arrived_event_holder.cpp
     hle/service/bcat/news/newly_arrived_event_holder.h
     hle/service/bcat/news/msgpack.cpp
