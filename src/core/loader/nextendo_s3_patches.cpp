@@ -180,7 +180,7 @@ constexpr std::array<std::span<const u8>, 1> kPokemonSvPatches{{kPokemonSvPatche
 // IPS32 offsets include the NSO header. It bypasses the certificate pinning, trusts the ISRG Root
 // X1 root and points the game at npln.eevee.ink. Nextendo told us the NEX-12.0.0.zip package that
 // goes with the catalog entry is outdated and must be ignored, so it is not installed here.
-constexpr std::array<u8, 2928> kSplatoon3v1200PatchData{
+constexpr std::array<u8, 2928> kSplatoon3v1200PatchData{{
     0x49, 0x50, 0x53, 0x33, 0x32, 0x00, 0x09, 0xE8, 0xC0, 0x00, 0x04, 0x14,
     0xF7, 0x37, 0x95, 0x00, 0x40, 0x40, 0xA0, 0x00, 0x04, 0xC2, 0x01, 0x80,
     0x52, 0x00, 0x40, 0x40, 0xA8, 0x00, 0x04, 0x1D, 0x61, 0x2A, 0x95, 0x03,
@@ -425,8 +425,8 @@ constexpr std::array<u8, 2928> kSplatoon3v1200PatchData{
     0x2E, 0x65, 0x65, 0x76, 0x65, 0x65, 0x2E, 0x69, 0x6E, 0x6B, 0x3A, 0x34,
     0x34, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x45, 0x45, 0x4F, 0x46,
-};
-constexpr std::array<std::span<const u8>, 1> kSplatoon3v1200Patches{kSplatoon3v1200PatchData};
+}};
+constexpr std::array<std::span<const u8>, 1> kSplatoon3v1200Patches{{kSplatoon3v1200PatchData}};
 
 // NSO build ID -> which patches it needs. An unrecognized build gets nothing, exactly like an
 // .ips file whose name didn't match any program. Splatoon 3 v11.3.0's build was verified
