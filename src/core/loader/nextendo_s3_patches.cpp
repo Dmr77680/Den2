@@ -191,6 +191,27 @@ constexpr std::array<KnownBuild, 11> kKnownBuilds{{
     {"421C5411B487EB4D049DD065FEC9547773E8E598", kPokemonSvPatches}, // Scarlet 4.0.0
 }};
 
+// Splatoon 3 builds that are no longer allowed online. Nextendo requires every player to run the
+// latest version: players on an older one cannot match with anybody and only add load on the
+// servers by trying to join with a mismatched version. These builds are therefore NOT patched
+// (the game stays offline and fails its connection like on a real console that must update).
+// The patch entries above are kept for reference. When Nextendo publishes the signed patch for
+// the latest build, only that build is added to kKnownBuilds.
+constexpr std::array<std::string_view, 3> kRetiredSplatoon3Builds{{
+    "6830B3A12406CB4716FEC5ADDC35D3E2DC92D212",
+    "726D2B882DD9EF10F4A9D73EED088740630FB6C8",
+    "28C4287AEE36F7499DA60F3E68B54C70DA382D75", // v11.3.0
+}};
+
+bool IsRetiredSplatoon3Build(std::string_view build_id_hex) {
+    for (const auto retired : kRetiredSplatoon3Builds) {
+        if (build_id_hex == retired) {
+            return true;
+        }
+    }
+    return false;
+}
+
 FileSys::VirtualFile MakeIpsFile(std::span<const u8> bytes) {
     return std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>(bytes.begin(), bytes.end()),
                                                      "nextendo_s3.ips32");
@@ -215,6 +236,17 @@ std::vector<u8> ApplyIfMatch(const std::array<u8, 0x20>& build_id, std::vector<u
                              std::string_view module_name) {
     const auto build_id_raw = Common::HexToString(build_id);
     const auto build_id_hex = build_id_raw.substr(0, build_id_raw.find_last_not_of('0') + 1);
+
+    if (IsRetiredSplatoon3Build(build_id_hex)) {
+        if (module_name == "main") {
+            LOG_ERROR(Loader,
+                      "[Nextendo] Splatoon 3 online is disabled for this version (build {}): "
+                      "Nextendo requires the latest update (12.0.0). Update the game to play "
+                      "online.",
+                      build_id_hex);
+        }
+        return nso;
+    }
 
     for (const auto& known : kKnownBuilds) {
         if (build_id_hex != known.build_id_hex) {
