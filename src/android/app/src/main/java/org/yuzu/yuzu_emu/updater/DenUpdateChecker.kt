@@ -8,9 +8,10 @@ import org.yuzu.yuzu_emu.NativeLibrary
 import java.util.concurrent.TimeUnit
 
 object DenUpdateChecker {
-    // Depot public qui ne contient que les versions (APK + notes), pas le code source.
+    // Derniere release publiee sur le depot public Den2 (l'ancien depot den-releases a ete
+    // desactive par GitHub le 20/11/2026).
     private const val LATEST_URL =
-        "https://api.github.com/repos/Dmr77680/den-releases/releases/latest"
+        "https://api.github.com/repos/Dmr77680/Den2/releases/latest"
 
     /** Retourne la nouvelle version si elle est plus recente que celle installee, sinon null. */
     fun check(installedVersion: String?): NativeLibrary.UpdateResult? {

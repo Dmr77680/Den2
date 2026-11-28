@@ -178,7 +178,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
 
         // [Nextendo] only this game version can reach the Nextendo servers (same table as Citron)
         private val nextendoVersions = mapOf(
-            "0100152000022000" to "4.0.0",  // Mario Kart 8 Deluxe
+            "0100152000022000" to "4.0.1",  // Mario Kart 8 Deluxe
             "01006a800016e000" to "13.0.5", // Super Smash Bros. Ultimate
             "0100f8f0000a2000" to "5.5.2",  // Splatoon 2 (EU)
             "01003bc0000a0000" to "5.5.2",  // Splatoon 2 (US)
@@ -187,7 +187,7 @@ class GameAdapter(private val activity: AppCompatActivity) :
             "0100dca0064a6000" to "1.4.0",  // Luigi's Mansion 3
             "01009b500007c000" to "5.5.1",  // ARMS
             "0100bde00862a000" to "3.1.1",  // Mario Tennis Aces
-            "0100c2500fc20000" to "11.3.0", // Splatoon 3
+            "0100c2500fc20000" to "12.0.0", // Splatoon 3
             "01009b90006dc000" to "3.0.3",  // Super Mario Maker 2
             "010015100b514000" to "1.2.1",  // Super Mario Bros. Wonder
             "0100277011f1a000" to "1.0.2",  // Super Mario Bros. 35

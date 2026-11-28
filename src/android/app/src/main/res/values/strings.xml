@@ -501,7 +501,7 @@
     <string name="stoat_link" translatable="false">https://stt.gg/qKgFEAbH</string>
     <string name="x_link" translatable="false">https://nitter.poast.org/edenemuofficial</string>
     <string name="website_link" translatable="false">https://eden-emu.dev</string>
-    <string name="github_link" translatable="false">https://github.com/Dmr77680/den-releases/releases</string>
+    <string name="github_link" translatable="false">https://github.com/Dmr77680/Den2/releases</string>
 
     <!-- General settings strings -->
     <string name="frame_limit_enable">Limit speed</string>
