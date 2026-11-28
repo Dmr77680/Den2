@@ -1142,9 +1142,54 @@ void SyncHistory(const std::vector<HistoryEntry>& entries) {
 
 namespace {
 
+bool IsHex16(const std::string& text) {
+    return text.size() == 16 && std::all_of(text.begin(), text.end(), [](unsigned char c) {
+               return std::isxdigit(c) != 0;
+           });
+}
+
+// [Nextendo] The friend's NSA id. Splatoon 3 (NPLN) names every friend by it and asks the friend
+// service for each friend's details with it -- a service that only knows PIDs resolves none of
+// them (14 UpdateFriendInfo calls, 0 matches) and the game's friend screens stay empty. The
+// Ryujinx-Nextendo client reads it from a "nsa" field of /api/friends. Try the likely names first,
+// then fall back to the one top-level string that looks like an id (16 hex digits), so a server
+// that calls the field something else still works; nsa_key records which one was used.
+void ParseNsa(const nlohmann::json& json, Friend& out) {
+    if (!json.is_object()) {
+        return;
+    }
+    static constexpr std::array<const char*, 6> kKeys{"nsa",          "account_hex", "baasUserID",
+                                                       "baas_user_id", "nsa_id",      "baas_id"};
+    for (const char* key : kKeys) {
+        const auto it = json.find(key);
+        if (it == json.end() || !it->is_string()) {
+            continue;
+        }
+        const auto value = it->get<std::string>();
+        if (!value.empty()) {
+            out.nsa = value;
+            out.nsa_key = key;
+            return;
+        }
+    }
+    for (const auto& item : json.items()) {
+        const std::string& key = item.key();
+        if (key == "username" || key == "name" || key == "image" || key == "avatar" ||
+            key == "color" || key == "friend_code" || key == "created_at") {
+            continue;
+        }
+        if (item.value().is_string() && IsHex16(item.value().get<std::string>())) {
+            out.nsa = item.value().get<std::string>();
+            out.nsa_key = key + "?";
+            return;
+        }
+    }
+}
+
 Friend ParseFriend(const nlohmann::json& json) {
     Friend out;
     out.pid = json.value("pid", u64{0});
+    ParseNsa(json, out);
     out.name = json.value("name", std::string{});
     if (out.name.empty()) {
         out.name = json.value("username", std::string{});
@@ -1244,6 +1289,43 @@ FriendList GetFriends() {
         out.ok = true;
         LOG_INFO(WebService, "GetFriends: {} friend(s), {} request(s)", out.friends.size(),
                  out.requests.size());
+
+        // Diagnostics: what the server actually sends per friend, and whether it sends an NSA id.
+        // Logged only when the shape changes (the poll runs every ~20 s). Values are never
+        // logged -- an NSA id doubles as a credential for the game servers.
+        {
+            static std::mutex shape_mutex;
+            static std::string last_shape;
+            std::string shape;
+            const auto friends_json = json.value("friends", nlohmann::json::array());
+            if (!friends_json.empty() && friends_json.front().is_object()) {
+                for (const auto& item : friends_json.front().items()) {
+                    shape += fmt::format(" {}:{}", item.key(), item.value().type_name());
+                }
+                if (const auto presence = friends_json.front().find("presence");
+                    presence != friends_json.front().end() && presence->is_object()) {
+                    shape += " | presence:";
+                    for (const auto& item : presence->items()) {
+                        shape += fmt::format(" {}:{}", item.key(), item.value().type_name());
+                    }
+                }
+            }
+            std::size_t with_nsa = 0;
+            std::string nsa_key;
+            for (const auto& entry : out.friends) {
+                if (!entry.nsa.empty()) {
+                    ++with_nsa;
+                    nsa_key = entry.nsa_key;
+                }
+            }
+            shape += fmt::format(" | nsa present for {}/{} friends (key '{}')", with_nsa,
+                                 out.friends.size(), nsa_key);
+            std::lock_guard lock{shape_mutex};
+            if (shape != last_shape) {
+                last_shape = shape;
+                LOG_INFO(WebService, "[Nextendo] /api/friends friend object:{}", shape);
+            }
+        }
     } catch (const nlohmann::json::exception& e) {
         out.error = fmt::format("Unexpected friends response: {}", e.what());
         LOG_WARNING(WebService, "GetFriends: {}", out.error);

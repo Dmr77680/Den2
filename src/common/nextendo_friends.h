@@ -18,6 +18,13 @@ struct Entry {
     s32 status = 0;        // 0 offline, 1 online, 2 in a game
     std::string app_field; // opaque per-title presence blob, raw bytes (already base64-decoded)
     std::vector<u8> image; // profile picture, raw JPEG bytes (already base64-decoded); empty if none
+    // [Nextendo] The friend's NSA id (nn::friends NetworkServiceAccountId), 0 if the account
+    // server did not send one. Splatoon 3 (NPLN) names every friend by this id, never by the PID:
+    // it asks the friend service for each friend's details BY NSA, so a service that only knows
+    // PIDs resolves none of them and the game's friend screens stay empty.
+    u64 nsa = 0;
+    // Title id the friend is playing right now (0 = none / unknown), from their presence.
+    u64 app_id = 0;
 };
 
 void Set(std::vector<Entry> entries);

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -179,9 +180,11 @@ bool ResolveProfileName(u64 pid, std::string& out_name) {
         out_name = Common::NextendoAccount::GetUsername();
         return true;
     }
+    // [Nextendo] "pid" may also be a friend's NSA id: an NPLN title (Splatoon 3) names players by it.
     const auto entries = Common::NextendoFriends::Get();
-    const auto it = std::find_if(entries.begin(), entries.end(),
-                                  [pid](const auto& e) { return e.pid == pid; });
+    const auto it = std::find_if(entries.begin(), entries.end(), [pid](const auto& e) {
+        return e.pid == pid || (e.nsa != 0 && e.nsa == pid);
+    });
     if (it != entries.end()) {
         out_name = it->name;
         return true;
@@ -202,26 +205,71 @@ std::optional<ProfileImpl> MakeProfile(u64 pid) {
     return out;
 }
 
-FriendImpl MakeFriend(const Common::NextendoFriends::Entry& entry) {
+// [Nextendo] Titles that reach their friends through NPLN (Splatoon 3, Super Mario Bros. Wonder)
+// name every friend by NSA id -- the id NPLN hands them -- never by the NEX PID the NEX titles
+// use (Mario Kart 8, Splatoon 2...). Measured on DEN, Splatoon 3 12.0.0: GetFriendListIds handed
+// out 14 PIDs, then the game asked UpdateFriendInfo for the 14 friends one by one with 14 NSA ids.
+// None matched a PID, so all 14 details came back empty and the game showed no friend at all
+// (Ryujinx-Nextendo solved this the same way: FriendService.WantsNsaIds). In this mode every
+// call speaks NSA: the ids we list, the ids we resolve, the ids stamped on the records.
+constexpr u64 SplatoonThreeTitleId = 0x0100C2500FC20000ULL;
+constexpr u64 WonderTitleId = 0x010015100B514000ULL;
+
+bool TitleWantsNsaIds(u64 program_id) {
+    return program_id == SplatoonThreeTitleId || program_id == WonderTitleId;
+}
+
+// The id a title in the given mode knows this friend by. Falls back to the PID when the server
+// sent no NSA for them.
+u64 FriendNetId(const Common::NextendoFriends::Entry& entry, bool nsa_mode) {
+    return nsa_mode && entry.nsa != 0 ? entry.nsa : entry.pid;
+}
+
+// Is the friend really playing this very title? A console only flags a friend "in the same
+// application" when they are; flagging everybody makes the game ask the server for the session of
+// each pretend player, find none, and drop the entry.
+bool PlaysTitle(const Common::NextendoFriends::Entry& entry, u64 program_id) {
+    return entry.status > 0 && entry.app_id != 0 && program_id != 0 && entry.app_id == program_id;
+}
+
+// Ids are logged masked: an NSA id doubles as a credential for the game servers, and these logs
+// get shared. The last 4 hex digits (and the width) are enough to compare ids across lines.
+std::string MaskId(u64 id) {
+    return fmt::format("{}:*{:04x}", id > 0xFFFFFFFFULL ? "nsa" : "pid", id & 0xFFFF);
+}
+
+FriendImpl MakeFriend(const Common::NextendoFriends::Entry& entry, u64 net_id, bool nsa_mode,
+                      u64 program_id) {
     FriendImpl out{};
-    out.user_id = UidForPid(entry.pid);
-    out.network_user_id = entry.pid;
+    out.user_id = UidForPid(net_id);
+    out.network_user_id = net_id;
 
     const auto length = std::min(entry.name.size(), out.nickname.size() - 1);
     std::memcpy(out.nickname.data(), entry.name.data(), length);
 
     out.presence.user_id = out.user_id;
-    out.presence.status = static_cast<u32>(entry.status);
     out.presence.last_time_online_timestamp = 0x7FFFFFFFFFFFFFFFLL;
-    // Marks the friend as being in THIS application, without which the game asks for zero friend
-    // PIDs and never queries their session.
-    out.presence.same_presence_group_application = 1;
+    if (nsa_mode) {
+        // Real presence, as a console tells it: online at all = "playing" (2), offline = 0, and
+        // the same-application flag only for a friend who really is in this title.
+        out.presence.status = entry.status > 0 ? 2U : 0U;
+        out.presence.same_presence_group_application = PlaysTitle(entry, program_id) ? 1 : 0;
+    } else {
+        out.presence.status = static_cast<u32>(entry.status);
+        // Marks the friend as being in THIS application, without which the game asks for zero
+        // friend PIDs and never queries their session.
+        out.presence.same_presence_group_application = 1;
+    }
 
     const auto blob = std::min(entry.app_field.size(), out.presence.app_key_value.size());
     std::memcpy(out.presence.app_key_value.data(), entry.app_field.data(), blob);
 
     out.is_valid = 1;
     return out;
+}
+
+FriendImpl MakeFriend(const Common::NextendoFriends::Entry& entry) {
+    return MakeFriend(entry, entry.pid, false, 0);
 }
 
 } // Anonymous namespace
@@ -371,9 +419,17 @@ public:
     void GetFriendListIds(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto offset = rp.Pop<s32>();
+        const auto uuid = rp.PopRaw<Common::UUID>();
+        const auto filter = rp.PopRaw<SizedFriendFilter>();
+
+        const u64 program_id = system.IsPoweredOn() ? system.GetApplicationProcessProgramID() : 0;
+        const bool nsa_mode = TitleWantsNsaIds(program_id);
 
         u32 count = 0;
-        if (offset == 0 && ctx.CanWriteBuffer()) {
+        std::string ids_dump;
+        // NSA titles enumerate their whole list through the requested offset; the others only ever
+        // read the first page.
+        if ((offset == 0 || (nsa_mode && offset > 0)) && ctx.CanWriteBuffer()) {
             // [Nextendo] Splatoon 3 asks for its friend list exactly once, early in boot, and
             // never asks again -- unlike NEX titles, which poll this repeatedly from their own
             // online thread (where blocking would stall PRUDP acks and the server would declare
@@ -382,25 +438,34 @@ public:
             // 3's one-shot request lands, it's stuck with zero friends for the whole session.
             // Give that one call a short, bounded wait instead. Matches Ryujinx-Nextendo's own
             // fix here (NextendoFriends.GetWarm), which measured this exact race.
-            constexpr u64 SplatoonThreeTitleId = 0x0100C2500FC20000ULL;
-            const auto entries = system.GetApplicationProcessProgramID() == SplatoonThreeTitleId
-                                     ? Common::NextendoFriends::GetWarm(2000)
-                                     : Common::NextendoFriends::Get();
+            const auto entries = nsa_mode ? Common::NextendoFriends::GetWarm(2000)
+                                          : Common::NextendoFriends::Get();
             const auto capacity = ctx.GetWriteBufferNumElements<u64>();
             std::vector<u64> ids;
-            for (const auto& entry : entries) {
+            // No filter here for NSA titles: handing back a superset is harmless (NPLN decides
+            // who is shown), dropping a friend by a filter they might not satisfy hides them.
+            for (std::size_t i = nsa_mode ? static_cast<std::size_t>(offset) : 0;
+                 i < entries.size(); ++i) {
                 if (ids.size() >= capacity) {
                     break;
                 }
-                ids.push_back(entry.pid);
+                ids.push_back(FriendNetId(entries[i], nsa_mode));
             }
             if (!ids.empty()) {
                 ctx.WriteBuffer(ids);
             }
             count = static_cast<u32>(ids.size());
+            for (std::size_t i = 0; i < std::min<std::size_t>(ids.size(), 16); ++i) {
+                ids_dump += fmt::format(" {}", MaskId(ids[i]));
+            }
         }
 
-        LOG_INFO(Service_Friend, "[Nextendo] GetFriendListIds -> {}", count);
+        LOG_INFO(Service_Friend,
+                 "[Nextendo] GetFriendListIds title={:016X} nsa_mode={} offset={} uuid=0x{} "
+                 "filter(presence={} fav={} same_app={} played={}) -> {} ids [{} ]",
+                 program_id, nsa_mode, offset, uuid.RawString(),
+                 static_cast<u32>(filter.presence), filter.is_favorite, filter.same_app,
+                 filter.same_app_played, count, ids_dump);
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push<u32>(count);
@@ -832,12 +897,24 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
                     cached.status = entry.presence_status;
                     cached.app_field = entry.app_field;
                     cached.image = Common::NextendoAvatar::DecodeBase64(entry.image_base64);
+                    // NSA id (16 hex digits) and the title being played (16 hex digits).
+                    cached.nsa = entry.nsa.empty()
+                                     ? 0
+                                     : std::strtoull(entry.nsa.c_str(), nullptr, 16);
+                    cached.app_id = entry.app_id.empty()
+                                        ? 0
+                                        : std::strtoull(entry.app_id.c_str(), nullptr, 16);
                     cache.push_back(std::move(cached));
                 }
                 const auto count = cache.size();
                 // Diagnostics: say which friends are online and what presence data they carry,
-                // only when that changes (the poll runs every ~20 s).
-                std::string signature;
+                // only when that changes (the poll runs every ~20 s). Ids are masked.
+                std::size_t with_nsa = 0;
+                for (const auto& cached : cache) {
+                    with_nsa += cached.nsa != 0 ? 1 : 0;
+                }
+                std::string signature =
+                    fmt::format(" ({} friends, {} with an NSA id)", count, with_nsa);
                 for (const auto& cached : cache) {
                     if (cached.status == 0) {
                         continue;
@@ -846,13 +923,15 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
                     for (const char c : cached.app_field.substr(0, 120)) {
                         blob += (c >= 0x20 && c < 0x7F) ? c : (c == '\0' ? '|' : '.');
                     }
-                    signature += fmt::format("\n    {} status={} presence={} bytes [{}]", cached.name,
-                                             cached.status, cached.app_field.size(), blob);
+                    signature += fmt::format(
+                        "\n    {} status={} app_id={:016X} {} presence={} bytes [{}]", cached.name,
+                        cached.status, cached.app_id,
+                        cached.nsa != 0 ? MaskId(cached.nsa) : std::string{"no-nsa"},
+                        cached.app_field.size(), blob);
                 }
                 if (signature != last_friends_signature) {
                     last_friends_signature = signature;
-                    LOG_INFO(Service_Friend, "[Nextendo] friends online/in a game:{}",
-                             signature.empty() ? std::string{" none"} : signature);
+                    LOG_INFO(Service_Friend, "[Nextendo] friends online/in a game:{}", signature);
                 }
                 Common::NextendoFriends::Set(std::move(cache));
                 NotifyFriendsListUpdated();
@@ -939,18 +1018,33 @@ void IFriendService::GetFriendList(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto friend_offset = rp.Pop<u32>();
     const auto uuid = rp.PopRaw<Common::UUID>();
-    [[maybe_unused]] const auto filter = rp.PopRaw<IFriendService::SizedFriendFilter>();
+    const auto filter = rp.PopRaw<IFriendService::SizedFriendFilter>();
     const auto pid = rp.Pop<u64>();
+
+    const u64 program_id = system.IsPoweredOn() ? system.GetApplicationProcessProgramID() : 0;
+    const bool nsa_mode = TitleWantsNsaIds(program_id);
+
     u32 count = 0;
-    if (friend_offset == 0 && ctx.CanWriteBuffer()) {
-        const auto entries = Common::NextendoFriends::Get();
+    std::string ids_dump;
+    if ((friend_offset == 0 || nsa_mode) && ctx.CanWriteBuffer()) {
+        // NSA titles get the same wait for a warm list as GetFriendListIds (they ask once, early),
+        // the same ids (NSA, same id space as GetFriendListIds and UpdateFriendInfo) and the real
+        // presence of each friend. Everyone else keeps the plain non-blocking path.
+        const auto entries = nsa_mode ? Common::NextendoFriends::GetWarm(2000)
+                                      : Common::NextendoFriends::Get();
         const auto capacity = ctx.GetWriteBufferNumElements<FriendImpl>();
         std::vector<FriendImpl> list;
-        for (const auto& entry : entries) {
+        for (std::size_t i = nsa_mode ? static_cast<std::size_t>(friend_offset) : std::size_t{0};
+             i < entries.size(); ++i) {
             if (list.size() >= capacity) {
                 break;
             }
-            list.push_back(MakeFriend(entry));
+            const auto& entry = entries[i];
+            const u64 net_id = FriendNetId(entry, nsa_mode);
+            list.push_back(MakeFriend(entry, net_id, nsa_mode, program_id));
+            if (ids_dump.size() < 16 * 14) {
+                ids_dump += fmt::format(" {}", MaskId(net_id));
+            }
         }
         if (!list.empty()) {
             ctx.WriteBuffer(list);
@@ -958,8 +1052,12 @@ void IFriendService::GetFriendList(HLERequestContext& ctx) {
         count = static_cast<u32>(list.size());
     }
 
-    LOG_INFO(Service_Friend, "[Nextendo] GetFriendList offset={} uuid=0x{} pid={} -> {}",
-             friend_offset, uuid.RawString(), pid, count);
+    LOG_INFO(Service_Friend,
+             "[Nextendo] GetFriendList title={:016X} nsa_mode={} offset={} uuid=0x{} pid={} "
+             "filter(presence={} fav={} same_app={} played={}) -> {} [{} ]",
+             program_id, nsa_mode, friend_offset, uuid.RawString(), pid,
+             static_cast<u32>(filter.presence), filter.is_favorite, filter.same_app,
+             filter.same_app_played, count, ids_dump);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push<u32>(count);
@@ -1107,24 +1205,63 @@ void IFriendService::UpdateFriendInfo(HLERequestContext& ctx) {
         }
     }
 
-    const auto entries = Common::NextendoFriends::Get();
+    const u64 program_id = system.IsPoweredOn() ? system.GetApplicationProcessProgramID() : 0;
+    const bool nsa_title = TitleWantsNsaIds(program_id);
+
+    // [Nextendo] The ids asked for here are the ones the GAME holds: NSA ids for an NPLN title
+    // (Splatoon 3: one call per friend, each with the friend's NSA id, taken from the NPLN
+    // answer), PIDs for a NEX title. Accept both, like Ryujinx-Nextendo. Each record is stamped
+    // with the id that was ASKED, not the PID: the caller pairs the answer to its question by that
+    // id, so a record correctly filled but stamped with the wrong id is thrown away -- the friend
+    // is resolved and the screen stays empty all the same. An NSA title may be asking right after
+    // boot, so it waits a little for the list; the others keep the non-blocking path.
+    const auto entries = nsa_title ? Common::NextendoFriends::GetWarm(2000)
+                                   : Common::NextendoFriends::Get();
     const auto capacity = std::min(ctx.GetWriteBufferNumElements<FriendImpl>(), MaxRequestedIds);
     const auto out_count = std::min(requested_ids.size(), capacity);
 
     std::vector<FriendImpl> info(out_count);
+    std::size_t by_nsa = 0;
+    std::size_t by_pid = 0;
+    std::string unmatched_dump;
     for (std::size_t i = 0; i < out_count; ++i) {
         const auto wanted = requested_ids[i];
-        const auto it = std::find_if(entries.begin(), entries.end(),
-                                     [wanted](const auto& e) { return e.pid == wanted; });
-        info[i] = it != entries.end() ? MakeFriend(*it) : FriendImpl{};
+        const auto it_nsa = std::find_if(entries.begin(), entries.end(), [wanted](const auto& e) {
+            return e.nsa != 0 && e.nsa == wanted;
+        });
+        const auto it_pid = std::find_if(entries.begin(), entries.end(),
+                                         [wanted](const auto& e) { return e.pid == wanted; });
+        if (it_nsa != entries.end()) {
+            ++by_nsa;
+            info[i] = MakeFriend(*it_nsa, wanted, true, program_id);
+            info[i].user_id = uuid;
+        } else if (it_pid != entries.end()) {
+            ++by_pid;
+            info[i] = MakeFriend(*it_pid, wanted, nsa_title, program_id);
+            if (nsa_title) {
+                info[i].user_id = uuid;
+            }
+        } else {
+            info[i] = FriendImpl{};
+            if (unmatched_dump.size() < 16 * 8) {
+                unmatched_dump += fmt::format(" {}", MaskId(wanted));
+            }
+        }
     }
 
     if (!info.empty()) {
         ctx.WriteBuffer(info);
     }
 
-    LOG_INFO(Service_Friend, "[Nextendo] UpdateFriendInfo uuid=0x{} requested={} -> {} resolved",
-             uuid.RawString(), requested_ids.size(), out_count);
+    LOG_INFO(Service_Friend,
+             "[Nextendo] UpdateFriendInfo title={:016X} nsa_mode={} uuid=0x{} requested={} "
+             "matched: by_nsa={} by_pid={} unmatched={} (cache={} friends, {} with nsa) "
+             "unmatched ids [{} ]",
+             program_id, nsa_title, uuid.RawString(), requested_ids.size(), by_nsa, by_pid,
+             out_count - by_nsa - by_pid, entries.size(),
+             std::count_if(entries.begin(), entries.end(),
+                           [](const auto& e) { return e.nsa != 0; }),
+             unmatched_dump);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
@@ -1149,11 +1286,20 @@ void IFriendService::GetFriendProfileImage(HLERequestContext& ctx) {
     // this just has to find the right entry and hand them back.
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
+    // The call carries the local user's Uid, then the id of the friend whose picture is wanted
+    // (NSA id for an NPLN title, PID for a NEX one). The old lookup read the friend out of the
+    // Uid, which only ever worked for a Uid we had handed out ourselves; keep it as the fallback.
+    const auto friend_id = rp.Pop<u64>();
     const auto pid = PidForUid(uuid);
 
     const auto entries = Common::NextendoFriends::Get();
-    const auto it = std::find_if(entries.begin(), entries.end(),
-                                 [pid](const auto& e) { return e.pid == pid; });
+    auto it = std::find_if(entries.begin(), entries.end(), [friend_id](const auto& e) {
+        return friend_id != 0 && ((e.nsa != 0 && e.nsa == friend_id) || e.pid == friend_id);
+    });
+    if (it == entries.end()) {
+        it = std::find_if(entries.begin(), entries.end(),
+                          [pid](const auto& e) { return e.pid == pid; });
+    }
 
     u32 size = 0;
     if (it != entries.end() && !it->image.empty()) {
@@ -1161,8 +1307,9 @@ void IFriendService::GetFriendProfileImage(HLERequestContext& ctx) {
         size = static_cast<u32>(it->image.size());
     }
 
-    LOG_INFO(Service_Friend, "[Nextendo] GetFriendProfileImage uuid=0x{} -> {} bytes",
-             uuid.RawString(), size);
+    LOG_INFO(Service_Friend,
+             "[Nextendo] GetFriendProfileImage uuid=0x{} friend={} found={} -> {} bytes",
+             uuid.RawString(), MaskId(friend_id), it != entries.end(), size);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push<u32>(size);
@@ -1174,11 +1321,17 @@ void IFriendService::GetFriendProfileImageWithImageSize(HLERequestContext& ctx) 
     // resolution anyway, so it's not worth threading through a second image variant for.
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
+    const auto friend_id = rp.Pop<u64>(); // see GetFriendProfileImage
     const auto pid = PidForUid(uuid);
 
     const auto entries = Common::NextendoFriends::Get();
-    const auto it = std::find_if(entries.begin(), entries.end(),
-                                 [pid](const auto& e) { return e.pid == pid; });
+    auto it = std::find_if(entries.begin(), entries.end(), [friend_id](const auto& e) {
+        return friend_id != 0 && ((e.nsa != 0 && e.nsa == friend_id) || e.pid == friend_id);
+    });
+    if (it == entries.end()) {
+        it = std::find_if(entries.begin(), entries.end(),
+                          [pid](const auto& e) { return e.pid == pid; });
+    }
 
     u32 size = 0;
     if (it != entries.end() && !it->image.empty()) {
@@ -1186,8 +1339,10 @@ void IFriendService::GetFriendProfileImageWithImageSize(HLERequestContext& ctx) 
         size = static_cast<u32>(it->image.size());
     }
 
-    LOG_INFO(Service_Friend, "[Nextendo] GetFriendProfileImageWithImageSize uuid=0x{} -> {} bytes",
-             uuid.RawString(), size);
+    LOG_INFO(Service_Friend,
+             "[Nextendo] GetFriendProfileImageWithImageSize uuid=0x{} friend={} found={} -> {} "
+             "bytes",
+             uuid.RawString(), MaskId(friend_id), it != entries.end(), size);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push<u32>(size);

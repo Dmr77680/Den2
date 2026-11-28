@@ -78,6 +78,8 @@ struct Friend {
     std::string app_id;      // running title id, 16 hex digits; empty when nothing is running
     std::string app_name;    // display name the playing client already resolved; may be empty
     std::string image_base64; // profile picture, base64 JPEG; empty if none set
+    std::string nsa;          // NSA id as sent by the server (16 hex digits); empty if absent
+    std::string nsa_key;      // name of the JSON key it came from, for diagnostics
 };
 
 struct FriendList {
