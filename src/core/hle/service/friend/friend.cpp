@@ -791,6 +791,7 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
 
     std::string last_app_id;
     bool first_friends_poll = true;
+    std::string last_friends_signature;
     int friends_countdown = 0;
     int presence_countdown = 0;
     bool was_linked = false;
@@ -834,6 +835,25 @@ void NextendoSyncThread(Core::System& system, std::shared_ptr<std::atomic<bool>>
                     cache.push_back(std::move(cached));
                 }
                 const auto count = cache.size();
+                // Diagnostics: say which friends are online and what presence data they carry,
+                // only when that changes (the poll runs every ~20 s).
+                std::string signature;
+                for (const auto& cached : cache) {
+                    if (cached.status == 0) {
+                        continue;
+                    }
+                    std::string blob;
+                    for (const char c : cached.app_field.substr(0, 120)) {
+                        blob += (c >= 0x20 && c < 0x7F) ? c : (c == '\0' ? '|' : '.');
+                    }
+                    signature += fmt::format("\n    {} status={} presence={} bytes [{}]", cached.name,
+                                             cached.status, cached.app_field.size(), blob);
+                }
+                if (signature != last_friends_signature) {
+                    last_friends_signature = signature;
+                    LOG_INFO(Service_Friend, "[Nextendo] friends online/in a game:{}",
+                             signature.empty() ? std::string{" none"} : signature);
+                }
                 Common::NextendoFriends::Set(std::move(cache));
                 NotifyFriendsListUpdated();
                 if (first_friends_poll) {
